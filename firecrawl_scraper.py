@@ -8,6 +8,8 @@ class ProductSchema(BaseModel):
 
 class FireCrawlScraper:
     def __init__(self, api_key: str):
+        if not api_key:
+            raise ValueError("FireCrawl API key is required")
         self.api_key = api_key
         self.base_url = "https://api.firecrawl.dev"
 
@@ -55,26 +57,3 @@ class FireCrawlScraper:
             'product_name': 'Sample Product',
             'price': '$99.99'
         }
-
-async def main():
-    # Example usage
-    scraper = FireCrawlScraper(api_key="your_api_key_here")
-    
-    # Start async crawl
-    crawl_result = await scraper.scrape_url_async('https://example.com')
-    print("Crawl started:", crawl_result)
-    
-    # Check status
-    status = await scraper.check_crawl_status(crawl_result['crawl_id'])
-    print("Crawl status:", status)
-    
-    # Extract structured data
-    schema = {
-        "product_name": {"type": "string", "path": ["title"]},
-        "price": {"type": "string", "path": ["price"]},
-    }
-    data = scraper.extract_structured_data('https://example.com/products', schema)
-    print("Extracted data:", data)
-
-if __name__ == "__main__":
-    asyncio.run(main()) 

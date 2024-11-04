@@ -18,6 +18,11 @@ class ScrapeGraphAI:
         required_keys = ["llm"]
         if not all(key in self.config for key in required_keys):
             raise ValueError(f"Configuration must contain: {required_keys}")
+        
+        # Validate LLM config
+        llm_config = self.config["llm"]
+        if "api_key" not in llm_config or not llm_config["api_key"]:
+            raise ValueError("OpenAI API key is required in llm configuration")
 
     def create_graph(self, graph_type: GraphType, **kwargs):
         """Create a specific type of scraping graph"""
@@ -72,37 +77,3 @@ class ScrapeGraphAI:
                 }
             }
         }
-
-if __name__ == "__main__":
-    # Example configuration
-    config = {
-        "llm": {
-            "model": "gpt-3.5-turbo",
-            "temperature": 0.7,
-            "api_key": "your_api_key_here"
-        },
-        "embeddings": {
-            "model": "text-embedding-ada-002"
-        }
-    }
-
-    # Initialize ScrapeGraphAI
-    scraper = ScrapeGraphAI(config)
-
-    # Create and execute a smart scraper graph
-    smart_graph = scraper.create_graph(
-        GraphType.SMART_SCRAPER,
-        url="https://example.com",
-        prompt="Extract product information"
-    )
-    results = scraper.execute_graph(smart_graph)
-    print("Smart Scraper Results:", results)
-
-    # Create and execute a search graph
-    search_graph = scraper.create_graph(
-        GraphType.SEARCH,
-        prompt="Find articles about AI",
-        max_results=5
-    )
-    results = scraper.execute_graph(search_graph)
-    print("Search Graph Results:", results) 

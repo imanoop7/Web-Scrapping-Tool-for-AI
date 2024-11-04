@@ -3,6 +3,8 @@ from typing import Optional, Dict, Any, List
 
 class JinaReader:
     def __init__(self, api_key: str):
+        if not api_key:
+            raise ValueError("Jina API key is required")
         self.api_key = api_key
         self.base_url = "https://r.jina.ai"
         self.headers = {
@@ -61,22 +63,3 @@ class JinaReader:
         except requests.RequestException as e:
             print(f"Error extracting images: {e}")
             return []
-
-if __name__ == "__main__":
-    reader = JinaReader(api_key="your_api_key_here")
-    
-    # Example usage
-    url = "https://example.com/article"
-    
-    # Read content
-    content = reader.read_url(url)
-    print("Extracted content:", content)
-    
-    # Summarize
-    if content.get("text"):
-        summary = reader.summarize(content["text"], max_length=200)
-        print("Summary:", summary)
-    
-    # Extract images
-    images = reader.extract_images(url)
-    print("Images:", images) 

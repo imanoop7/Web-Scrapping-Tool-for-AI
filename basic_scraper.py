@@ -42,8 +42,3 @@ class BasicScraper:
             print(f"Data saved to {filename}")
         except IOError as e:
             print(f"Error saving to CSV: {e}")
-
-if __name__ == "__main__":
-    scraper = BasicScraper()
-    results = scraper.scrape_webpage("https://example.com/news")
-    print("Scraped titles:", results) 
