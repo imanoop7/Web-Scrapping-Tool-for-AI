@@ -21,55 +21,6 @@ cd Web-Scrapping-Tool-for-AI
 ```bash
 pip install -r requirements.txt
 ```
-
-## Usage Examples
-
-### Basic Scraper
-```python
-from basic_scraper import BasicScraper
-
-scraper = BasicScraper()
-results = scraper.scrape_webpage("https://example.com/news")
-```
-
-### FireCrawl Scraper
-```python
-from firecrawl_scraper import FireCrawlScraper
-import asyncio
-
-async def main():
-    scraper = FireCrawlScraper(api_key="your_api_key")
-    results = await scraper.scrape_url_async("https://example.com")
-
-asyncio.run(main())
-```
-
-### Jina Reader
-```python
-from jina_reader import JinaReader
-
-reader = JinaReader(api_key="your_api_key")
-content = reader.read_url("https://example.com/article")
-```
-
-### ScrapeGraphAI
-```python
-from scrapegraph_ai import ScrapeGraphAI, GraphType
-
-config = {
-    "llm": {
-        "model": "gpt-3.5-turbo",
-        "api_key": "your_api_key"
-    }
-}
-scraper = ScrapeGraphAI(config)
-results = scraper.create_graph(
-    GraphType.SMART_SCRAPER, 
-    url="https://example.com",
-    prompt="Extract product information"
-)
-```
-
 ## Required API Keys
 
 To use all features of this collection, you'll need:
