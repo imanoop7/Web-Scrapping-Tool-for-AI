@@ -66,13 +66,28 @@ def display_results(results, scraper_type):
     st.success("✅ Scraping completed successfully!")
     
     # Display results in tabs
-    tab1, tab2 = st.tabs(["📊 Results", "📝 Raw JSON"])
+    tab1, tab2 = st.tabs(["📊 Formatted Results", "📝 Raw JSON"])
     
     with tab1:
         if scraper_type == "Basic Scraper":
-            st.write("### Extracted Articles")
-            for idx, title in enumerate(results.get("results", []), 1):
-                st.write(f"{idx}. {title}")
+            # Display headings
+            if "content" in results and "headings" in results["content"]:
+                st.write("### 📑 Headings")
+                for heading in results["content"]["headings"]:
+                    st.write(f"{heading['type'].upper()}: {heading['text']}")
+            
+            # Display paragraphs
+            if "content" in results and "paragraphs" in results["content"]:
+                st.write("### 📝 Paragraphs")
+                for idx, para in enumerate(results["content"]["paragraphs"], 1):
+                    with st.expander(f"Paragraph {idx}"):
+                        st.write(para)
+            
+            # Display links
+            if "content" in results and "links" in results["content"]:
+                st.write("### 🔗 Links")
+                for link in results["content"]["links"]:
+                    st.write(f"- [{link['text']}]({link['url']})")
         else:
             st.write("### Extracted Data")
             st.write(results)
@@ -80,21 +95,39 @@ def display_results(results, scraper_type):
     with tab2:
         st.json(results)
     
-    # Save and create download button
-    filepath = save_results(results, scraper_type.lower().replace(" ", "_"))
-    with open(filepath, 'r') as f:
-        st.download_button(
-            "📥 Download Results",
-            f.read(),
-            file_name=os.path.basename(filepath),
-            mime="application/json"
-        )
+    # Create download button for JSON
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"scraped_data_{timestamp}.json"
+    
+    # Convert results to JSON string
+    json_str = json.dumps(results, indent=2)
+    
+    # Create download button
+    st.download_button(
+        label="📥 Download JSON",
+        data=json_str,
+        file_name=filename,
+        mime="application/json",
+    )
 
-def run_basic_scraper(url, article_class):
+def run_basic_scraper(url, article_selector):
     with st.spinner("🔍 Scraping webpage..."):
-        scraper = BasicScraper()
-        results = scraper.scrape_webpage(url, article_class)
-        return {"results": results}
+        try:
+            scraper = BasicScraper()
+            results = scraper.scrape_webpage(url, article_selector)
+            
+            if "error" in results:
+                st.error(f"Scraping error: {results['error']}")
+                return results
+            
+            if not any(results["content"].values()):
+                st.warning("No content was extracted. Try adjusting the selector or check if the website allows scraping.")
+            
+            return results
+            
+        except Exception as e:
+            st.error(f"Error during scraping: {str(e)}")
+            return {"error": str(e), "success": False}
 
 async def run_firecrawl(url, api_key):
     with st.spinner("🔄 Processing with FireCrawl..."):
@@ -158,9 +191,9 @@ def main():
     # Scraper-specific inputs and processing
     try:
         if scraper_type == "Basic Scraper":
-            article_class = st.text_input("Enter article class (optional)", "article-title")
+            article_selector = st.text_input("Enter article selector (optional)", "article-title")
             if st.button("🚀 Start Scraping"):
-                results = run_basic_scraper(url, article_class)
+                results = run_basic_scraper(url, article_selector)
                 display_results(results, scraper_type)
         
         elif scraper_type == "FireCrawl Scraper":

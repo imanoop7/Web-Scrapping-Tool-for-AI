@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
-import csv
+import json
+from typing import Dict, List, Any
+from datetime import datetime
 
 class BasicScraper:
     def __init__(self):
@@ -8,7 +10,7 @@ class BasicScraper:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
 
-    def scrape_webpage(self, url, article_class='article-title'):
+    def scrape_webpage(self, url: str, article_selector: str = None) -> Dict[str, Any]:
         try:
             # Send GET request
             response = requests.get(url, headers=self.headers)
@@ -17,28 +19,61 @@ class BasicScraper:
             # Parse HTML content
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # Extract titles
-            titles = soup.find_all('h2', class_=article_class)
+            # Initialize results dictionary
+            scraped_data = {
+                "url": url,
+                "timestamp": datetime.now().isoformat(),
+                "content": {
+                    "headings": [],
+                    "paragraphs": [],
+                    "links": []
+                }
+            }
             
-            # Store results
-            results = [title.text.strip() for title in titles]
+            # Extract content based on selector
+            if article_selector:
+                elements = soup.select(article_selector)
+                if elements:
+                    scraped_data["content"]["custom_selector"] = [
+                        elem.get_text(strip=True) for elem in elements if elem.get_text(strip=True)
+                    ]
             
-            # Save to CSV
-            self._save_to_csv(results)
+            # Extract headings
+            for heading in soup.find_all(['h1', 'h2', 'h3']):
+                text = heading.get_text(strip=True)
+                if text:
+                    scraped_data["content"]["headings"].append({
+                        "type": heading.name,
+                        "text": text
+                    })
             
-            return results
+            # Extract paragraphs
+            for para in soup.find_all('p'):
+                text = para.get_text(strip=True)
+                if text and len(text) > 20:  # Filter out short texts
+                    scraped_data["content"]["paragraphs"].append(text)
+            
+            # Extract links
+            for link in soup.find_all('a'):
+                href = link.get('href')
+                text = link.get_text(strip=True)
+                if href and text:
+                    scraped_data["content"]["links"].append({
+                        "text": text,
+                        "url": href
+                    })
+            
+            return scraped_data
             
         except requests.RequestException as e:
-            print(f"Error fetching webpage: {e}")
-            return []
-
-    def _save_to_csv(self, titles, filename='article_titles.csv'):
-        try:
-            with open(filename, 'w', newline='', encoding='utf-8') as file:
-                writer = csv.writer(file)
-                writer.writerow(["Title"])  # Header
-                for title in titles:
-                    writer.writerow([title])
-            print(f"Data saved to {filename}")
-        except IOError as e:
-            print(f"Error saving to CSV: {e}")
+            return {
+                "error": f"Request error: {str(e)}",
+                "url": url,
+                "success": False
+            }
+        except Exception as e:
+            return {
+                "error": f"Unexpected error: {str(e)}",
+                "url": url,
+                "success": False
+            }
